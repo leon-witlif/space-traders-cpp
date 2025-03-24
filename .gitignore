@@ -1,0 +1,12 @@
+bin/
+obj/
+
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.sln
+*.log
+Makefile
+*.make
+
+!vendor/bin
