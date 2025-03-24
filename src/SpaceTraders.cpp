@@ -1,67 +1,23 @@
+#include "SpaceTraders.h"
+
 #include <iostream>
-#include <optional>
-#include <string>
 
-#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "HttpClient.h"
 
-#include "cpp-httplib/httplib.h"
-#include "nlohmann/json.hpp"
-
-using json = nlohmann::json;
-
-namespace SpaceTraders
+void SpaceTraders::Model::Agent::from_json(const nlohmann::json& json, SpaceTraders::Model::Agent::Agent& agent)
 {
-    namespace Model
-    {
-        namespace Agent
-        {
-            struct Agent
-            {
-                std::optional<std::string> accountId;
-            };
-
-            void from_json(const json& json, Agent& agent)
-            {
-                json.contains("accountId") ? agent.accountId = json.at("accountId").get<std::string>() : agent.accountId = std::nullopt;
-            }
-        }
-    }
-
-    namespace Endpoint
-    {
-        namespace Agent
-        {
-            struct ListAgents
-            {
-                std::vector<SpaceTraders::Model::Agent::Agent> data;
-            };
-
-            NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ListAgents, data);
-        }
-
-        namespace Global
-        {
-            struct GetStatus
-            {
-                std::string status;
-                std::string version;
-            };
-
-            NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(GetStatus, status, version);
-        }
-    }
+    json.contains("accountId") ? agent.accountId = json.at("accountId").get<std::string>() : agent.accountId = std::nullopt;
 }
 
-template <class ResponseType>
-void MakeRequest(httplib::Client& client, const std::string& path, ResponseType& content)
+void SpaceTraders::Endpoint::Agent::from_json(const nlohmann::json& json, SpaceTraders::Endpoint::Agent::ListAgents& agents)
 {
-    httplib::Result result = client.Get(path);
+    json.at("data").get_to(agents.data);
+}
 
-    if (result->status == httplib::StatusCode::OK_200)
-    {
-        json temp = json::parse(result->body);
-        content = temp.template get<ResponseType>();
-    }
+void SpaceTraders::Endpoint::Global::from_json(const nlohmann::json& json, SpaceTraders::Endpoint::Global::GetStatus& status)
+{
+    json.at("status").get_to(status.status);
+    json.at("version").get_to(status.version);
 }
 
 int main()
@@ -73,16 +29,16 @@ int main()
         return 0;
     }
 
-    httplib::Client client("https://api.spacetraders.io");
-    client.set_bearer_token_auth(bearerToken);
+    HttpClient client(bearerToken);
+    nlohmann::json response;
 
-    SpaceTraders::Endpoint::Global::GetStatus status;
-    MakeRequest(client, "/v2/", status);
+    client.MakeRequest("/", response);
+    auto status = response.template get<SpaceTraders::Endpoint::Global::GetStatus>();
 
     std::cout << "Status: " << status.status << std::endl << "Version: " << status.version << std::endl;
 
-    SpaceTraders::Endpoint::Agent::ListAgents agents;
-    MakeRequest(client, "/v2/agents", agents);
+    client.MakeRequest("/agents", response);
+    auto agents = response.template get<SpaceTraders::Endpoint::Agent::ListAgents>();
 
     std::cout << "Count agents: " << agents.data.size() << std::endl;
 }

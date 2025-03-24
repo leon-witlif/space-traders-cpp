@@ -5,10 +5,12 @@ project "SpaceTraders"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++17"
-    targetdir "bin/%{cfg.buildcfg}"
 
     files { "src/**.h", "src/**.cpp" }
-    includedirs { "vendor/", "/usr/include", "/usr/local/include" }
+    includedirs { "src", "vendor", "/usr/include", "/usr/local/include" }
+
+    targetdir "bin/%{cfg.buildcfg}"
+    objdir "obj/%{cfg.buildcfg}"
 
     links { "crypto", "ssl" }
 
