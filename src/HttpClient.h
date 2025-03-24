@@ -2,11 +2,15 @@
 #define HTTP_CLIENT_H
 #pragma once
 
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+
 #include <string>
 
-#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include "cpp-httplib/httplib.h"
-#include "nlohmann/json.hpp"
+#include "nlohmann/json_fwd.hpp"
+
+#include "Endpoint/Agent.h"
+#include "Endpoint/Global.h"
 
 class HttpClient
 {
