@@ -1,8 +1,6 @@
+#include "nlohmann/json.hpp"
+
 #include "HttpClient.h"
-
-#include "SpaceTraders.h"
-
-using namespace SpaceTraders::Endpoint;
 
 HttpClient::HttpClient(const std::string& bearerToken)
     : client("https://api.spacetraders.io")
