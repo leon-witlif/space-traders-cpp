@@ -10,5 +10,6 @@ obj/
 *.log
 Makefile
 *.make
+imgui.ini
 
 !vendor/bin
