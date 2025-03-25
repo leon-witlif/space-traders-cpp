@@ -6,13 +6,13 @@ project "SpaceTraders"
     language "C++"
     cppdialect "C++17"
 
-    files { "src/**.h", "src/**.cpp" }
+    files { "src/**.h", "src/**.cpp", "vendor/imgui/**.cpp" }
     includedirs { "src", "vendor", "/usr/include", "/usr/local/include" }
 
     targetdir "bin/%{cfg.buildcfg}"
     objdir "obj/%{cfg.buildcfg}"
 
-    links { "crypto", "ssl" }
+    links { "crypto", "GL", "glfw", "ssl" }
 
     filter "configurations:Debug"
         defines { "DEBUG" }
