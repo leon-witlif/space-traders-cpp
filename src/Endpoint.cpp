@@ -1,35 +1,47 @@
 #include "nlohmann/json.hpp"
 
-#include "Endpoint/Agent.h"
-#include "Endpoint/Global.h"
+#include "Endpoint.h"
 
-namespace SpaceTraders::Endpoint::Agent
+namespace SpaceTraders
 {
-    void from_json(const nlohmann::json& json, GetAgent& agent)
+    namespace Endpoint::Agent
     {
+        void from_json(const nlohmann::json& json, GetAgent& agent)
+        {
+            json.at("data").get_to(agent.data);
+        }
+
+        void from_json(const nlohmann::json& json, ListAgents& agents)
+        {
+            json.at("data").get_to(agents.data);
+        }
+
+        void from_json(const nlohmann::json& json, GetPublicAgent& agent)
+        {
+            json.at("data").get_to(agent.data);
+        }
     }
 
-    void from_json(const nlohmann::json& json, ListAgents& agents)
+    namespace Endpoint::Fleet
     {
-        json.at("data").get_to(agents.data);
+        void from_json(const nlohmann::json& json, ListShips& ships)
+        {
+            json.at("data").get_to(ships.data);
+        }
     }
 
-    void from_json(const nlohmann::json& json, GetPublicAgent& agent)
+    namespace Endpoint::Global
     {
-    }
-}
+        void from_json(const nlohmann::json& json, GetStatus& status)
+        {
+            json.at("status").get_to(status.status);
+            json.at("version").get_to(status.version);
+            json.at("resetDate").get_to(status.resetDate);
+            json.at("description").get_to(status.description);
+        }
 
-namespace SpaceTraders::Endpoint::Global
-{
-    void from_json(const nlohmann::json& json, GetStatus& status)
-    {
-        json.at("status").get_to(status.status);
-        json.at("version").get_to(status.version);
-        json.at("resetDate").get_to(status.resetDate);
-        json.at("description").get_to(status.description);
-    }
-
-    void from_json(const nlohmann::json& json, RegisterNewAgent& agent)
-    {
+        void from_json(const nlohmann::json& json, RegisterNewAgent& agent)
+        {
+        }
     }
 }

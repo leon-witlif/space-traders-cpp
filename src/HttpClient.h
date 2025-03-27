@@ -9,18 +9,23 @@
 #include "cpp-httplib/httplib.h"
 #include "nlohmann/json_fwd.hpp"
 
-#include "Endpoint/Agent.h"
-#include "Endpoint/Global.h"
-
-class HttpClient
+namespace SpaceTraders
 {
-    public:
-        HttpClient(const std::string& bearerToken);
+    class HttpClient
+    {
+        public:
+            HttpClient(const std::string bearerToken);
 
-        void MakeRequest(const std::string& path, nlohmann::json& content);
+            void MakeGlobalRequest(const std::string& path, nlohmann::json& content);
+            void MakeAccountRequest(const std::string& agentToken, const std::string& path, nlohmann::json& content);
 
-    private:
-        httplib::Client client;
-};
+        private:
+            void MakeRequest(const std::string& path, nlohmann::json& content);
+
+        private:
+            httplib::Client client;
+            const std::string bearerToken;
+    };
+}
 
 #endif
