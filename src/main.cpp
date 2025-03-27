@@ -3,6 +3,7 @@
 #include "nlohmann/json.hpp"
 
 #include "HttpClient.h"
+#include "Endpoint.h"
 #include "Window.h"
 
 int main()
@@ -19,22 +20,16 @@ int main()
     SpaceTraders::HttpClient client(bearerToken);
     nlohmann::json content;
 
-    client.MakeGlobalRequest("/", content);
-    auto status = content.template get<SpaceTraders::Endpoint::Global::GetStatus>();
+    auto status = SpaceTraders::Endpoint::Global::GetStatus(client);
+    // auto agents = SpaceTraders::Endpoint::Agent::ListAgents(client);
 
-    client.MakeGlobalRequest("/agents", content);
-    auto agents = content.template get<SpaceTraders::Endpoint::Agent::ListAgents>();
-
-    SpaceTraders::Endpoint::Agent::GetAgent agent{};
-    SpaceTraders::Endpoint::Fleet::ListShips ships{};
+    SpaceTraders::Model::Agent::Agent agent{};
+    std::vector<SpaceTraders::Model::Fleet::Ship> ships{};
 
     if (agentToken.length())
     {
-        client.MakeAccountRequest(agentToken, "/my/agent", content);
-        agent = content.template get<SpaceTraders::Endpoint::Agent::GetAgent>();
-
-        client.MakeAccountRequest(agentToken, "/my/ships", content);
-        ships = content.template get<SpaceTraders::Endpoint::Fleet::ListShips>();
+        agent = SpaceTraders::Endpoint::Agent::GetAgent(client, agentToken);
+        ships = SpaceTraders::Endpoint::Fleet::ListShips(client, agentToken);
     }
 
     SpaceTraders::Window window(&status, &agent, &ships);

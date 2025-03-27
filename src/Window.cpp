@@ -5,7 +5,7 @@ static ImGuiWindowFlags DefaultWindowFlags = ImGuiWindowFlags_NoResize
     | ImGuiWindowFlags_NoCollapse
     | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-SpaceTraders::Window::Window(const Endpoint::Global::GetStatus* status, const Endpoint::Agent::GetAgent* agent, const Endpoint::Fleet::ListShips* ships)
+SpaceTraders::Window::Window(const Model::Global::Status* status, const Model::Agent::Agent* agent, const std::vector<Model::Fleet::Ship>* ships)
     : m_Status(status), m_Agent(agent), m_Ships(ships)
 {
     if (!glfwInit())
@@ -111,13 +111,13 @@ void SpaceTraders::Window::ShowAgentWindow()
 
     ImGui::Begin("Agent", nullptr, DefaultWindowFlags);
 
-    if (m_Agent && m_Agent->data.symbol.length())
+    if (m_Agent && m_Agent->symbol.length())
     {
-        ImGui::Text("Symbol: %s", m_Agent->data.symbol.c_str());
-        ImGui::Text("Headquarters: %s", m_Agent->data.headquarters.c_str());
-        ImGui::Text("Credits: %li", m_Agent->data.credits);
-        ImGui::Text("StartingFaction: %s", m_Agent->data.startingFaction.c_str());
-        ImGui::Text("ShipCount: %i", m_Agent->data.shipCount);
+        ImGui::Text("Symbol: %s", m_Agent->symbol.c_str());
+        ImGui::Text("Headquarters: %s", m_Agent->headquarters.c_str());
+        ImGui::Text("Credits: %li", m_Agent->credits);
+        ImGui::Text("StartingFaction: %s", m_Agent->startingFaction.c_str());
+        ImGui::Text("ShipCount: %i", m_Agent->shipCount);
     }
 
     ImGui::End();
@@ -139,11 +139,11 @@ void SpaceTraders::Window::ShowShipWindow()
 
     ImGui::Begin("Ship", nullptr, DefaultWindowFlags);
 
-    if (m_Ships && m_Ships->data.size())
+    if (m_Ships && m_Ships->size())
     {
         ImGui::BeginTabBar("Ships");
 
-        for (auto ship : m_Ships->data)
+        for (const auto& ship : *m_Ships)
         {
             if (ImGui::BeginTabItem(ship.symbol.c_str()))
             {

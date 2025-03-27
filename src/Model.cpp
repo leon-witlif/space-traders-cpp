@@ -59,4 +59,15 @@ namespace SpaceTraders
             json.at("fuel").get_to(ship.fuel);
         }
     }
+
+    namespace Model::Global
+    {
+        void from_json(const nlohmann::json& json, Status& status)
+        {
+            json.at("status").get_to(status.status);
+            json.at("version").get_to(status.version);
+            json.at("resetDate").get_to(status.resetDate);
+            json.at("description").get_to(status.description);
+        }
+    }
 }
