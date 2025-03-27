@@ -2,46 +2,42 @@
 
 #include "Endpoint.h"
 
+static nlohmann::json content;
+
 namespace SpaceTraders
 {
     namespace Endpoint::Agent
     {
-        void from_json(const nlohmann::json& json, GetAgent& agent)
+        Model::Agent::Agent GetAgent(HttpClient& client, const std::string& agentToken)
         {
-            json.at("data").get_to(agent.data);
+            client.MakeAccountRequest(agentToken, "/my/agent", content);
+            return content.at("data").template get<Model::Agent::Agent>();
         }
 
-        void from_json(const nlohmann::json& json, ListAgents& agents)
+        std::vector<Model::Agent::Agent> ListAgents(HttpClient& client)
         {
-            json.at("data").get_to(agents.data);
-        }
-
-        void from_json(const nlohmann::json& json, GetPublicAgent& agent)
-        {
-            json.at("data").get_to(agent.data);
+            client.MakeGlobalRequest("/agents", content);
+            return content.at("data").template get<std::vector<Model::Agent::Agent>>();
+            // array{meta: array{total: int32, page: int32, limit: int32}}
         }
     }
 
     namespace Endpoint::Fleet
     {
-        void from_json(const nlohmann::json& json, ListShips& ships)
+        std::vector<Model::Fleet::Ship> ListShips(HttpClient& client, const std::string& agentToken)
         {
-            json.at("data").get_to(ships.data);
+            client.MakeAccountRequest(agentToken, "/my/ships", content);
+            return content.at("data").template get<std::vector<Model::Fleet::Ship>>();
+            // array{meta: array{total: int32, page: int32, limit: int32}}
         }
     }
 
     namespace Endpoint::Global
     {
-        void from_json(const nlohmann::json& json, GetStatus& status)
+        Model::Global::Status GetStatus(HttpClient& client)
         {
-            json.at("status").get_to(status.status);
-            json.at("version").get_to(status.version);
-            json.at("resetDate").get_to(status.resetDate);
-            json.at("description").get_to(status.description);
-        }
-
-        void from_json(const nlohmann::json& json, RegisterNewAgent& agent)
-        {
+            client.MakeGlobalRequest("/", content);
+            return content.template get<Model::Global::Status>();
         }
     }
 }

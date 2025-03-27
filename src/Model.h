@@ -90,6 +90,15 @@ namespace SpaceTraders
 
     namespace Model::Global
     {
+        struct Status
+        {
+            std::string status;
+            std::string version;
+            std::string resetDate;
+            std::string description;
+        };
+
+        void from_json(const nlohmann::json& json, Status& status);
     }
 }
 

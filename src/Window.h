@@ -11,14 +11,14 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
-#include "Endpoint.h"
+#include "Model.h"
 
 namespace SpaceTraders
 {
     class Window
     {
         public:
-            Window(const Endpoint::Global::GetStatus* status, const Endpoint::Agent::GetAgent* agent, const Endpoint::Fleet::ListShips* ships);
+            Window(const Model::Global::Status* status, const Model::Agent::Agent* agent, const std::vector<Model::Fleet::Ship>* ships);
             ~Window();
 
             void RunWindowLoop();
@@ -32,9 +32,9 @@ namespace SpaceTraders
         private:
             GLFWwindow* m_Window;
 
-            const Endpoint::Global::GetStatus* m_Status;
-            const Endpoint::Agent::GetAgent* m_Agent;
-            const Endpoint::Fleet::ListShips* m_Ships;
+            const Model::Global::Status* m_Status;
+            const Model::Agent::Agent* m_Agent;
+            const std::vector<Model::Fleet::Ship>* m_Ships;
     };
 }
 
