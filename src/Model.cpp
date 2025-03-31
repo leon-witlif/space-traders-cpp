@@ -1,5 +1,3 @@
-#include "nlohmann/json.hpp"
-
 #include "Model.h"
 
 namespace SpaceTraders
@@ -14,6 +12,41 @@ namespace SpaceTraders
             json.at("credits").get_to(agent.credits);
             json.at("startingFaction").get_to(agent.startingFaction);
             json.at("shipCount").get_to(agent.shipCount);
+        }
+    }
+
+    namespace Model::Contract
+    {
+        void from_json(const nlohmann::json& json, ContractPayment& payment)
+        {
+            json.at("onAccepted").get_to(payment.onAccepted);
+            json.at("onFulfilled").get_to(payment.onFulfilled);
+        }
+
+        void from_json(const nlohmann::json& json, ContractDeliverGood& deliverGood)
+        {
+            json.at("tradeSymbol").get_to(deliverGood.tradeSymbol);
+            json.at("destinationSymbol").get_to(deliverGood.destinationSymbol);
+            json.at("unitsRequired").get_to(deliverGood.unitsRequired);
+            json.at("unitsFulfilled").get_to(deliverGood.unitsFulfilled);
+        }
+
+        void from_json(const nlohmann::json& json, ContractTerms& terms)
+        {
+            json.at("deadline").get_to(terms.deadline);
+            json.at("payment").get_to(terms.payment);
+            json.at("deliver").get_to(terms.deliver);
+        }
+
+        void from_json(const nlohmann::json& json, Contract& contract)
+        {
+            json.at("id").get_to(contract.id);
+            json.at("factionSymbol").get_to(contract.factionSymbol);
+            json.at("type").get_to(contract.type);
+            json.at("terms").get_to(contract.terms);
+            json.at("accepted").get_to(contract.accepted);
+            json.at("fulfilled").get_to(contract.fulfilled);
+            json.at("deadlineToAccept").get_to(contract.deadlineToAccept);
         }
     }
 

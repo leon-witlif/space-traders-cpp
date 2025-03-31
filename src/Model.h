@@ -5,7 +5,7 @@
 #include <optional>
 #include <string>
 
-#include "nlohmann/json_fwd.hpp"
+#include "nlohmann/json.hpp"
 
 namespace SpaceTraders
 {
@@ -26,6 +26,42 @@ namespace SpaceTraders
 
     namespace Model::Contract
     {
+        struct ContractPayment
+        {
+            int32_t onAccepted;
+            int32_t onFulfilled;
+        };
+
+        struct ContractDeliverGood
+        {
+            std::string tradeSymbol;
+            std::string destinationSymbol;
+            int32_t unitsRequired;
+            int32_t unitsFulfilled;
+        };
+
+        struct ContractTerms
+        {
+            std::string deadline;
+            ContractPayment payment;
+            std::vector<ContractDeliverGood> deliver;
+        };
+
+        struct Contract
+        {
+            std::string id;
+            std::string factionSymbol;
+            std::string type;
+            ContractTerms terms;
+            bool accepted;
+            bool fulfilled;
+            std::string deadlineToAccept;
+        };
+
+        void from_json(const nlohmann::json& json, ContractPayment& payment);
+        void from_json(const nlohmann::json& json, ContractDeliverGood& deliverGood);
+        void from_json(const nlohmann::json& json, ContractTerms& terms);
+        void from_json(const nlohmann::json& json, Contract& contract);
     }
 
     namespace Model::Faction

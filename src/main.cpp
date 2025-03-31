@@ -1,9 +1,7 @@
 #include <iostream>
 
-#include "nlohmann/json.hpp"
-
-#include "HttpClient.h"
 #include "Endpoint.h"
+#include "HttpClient.h"
 #include "Window.h"
 
 int main()
@@ -18,20 +16,21 @@ int main()
     std::string agentToken("");
 
     SpaceTraders::HttpClient client(bearerToken);
-    nlohmann::json content;
 
     auto status = SpaceTraders::Endpoint::Global::GetStatus(client);
     // auto agents = SpaceTraders::Endpoint::Agent::ListAgents(client);
 
     SpaceTraders::Model::Agent::Agent agent{};
     std::vector<SpaceTraders::Model::Fleet::Ship> ships{};
+    std::vector<SpaceTraders::Model::Contract::Contract> contracts{};
 
     if (agentToken.length())
     {
         agent = SpaceTraders::Endpoint::Agent::GetAgent(client, agentToken);
         ships = SpaceTraders::Endpoint::Fleet::ListShips(client, agentToken);
+        contracts = SpaceTraders::Endpoint::Contract::ListContracts(client, agentToken);
     }
 
-    SpaceTraders::Window window(&status, &agent, &ships);
+    SpaceTraders::Window window(&status, &agent, &ships, &contracts);
     window.RunWindowLoop();
 }
