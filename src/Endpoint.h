@@ -2,9 +2,10 @@
 #define ENDPOINT_H
 #pragma once
 
+#include <string>
 #include <vector>
 
-#include "nlohmann/json_fwd.hpp"
+#include "nlohmann/json.hpp"
 
 #include "HttpClient.h"
 #include "Model.h"
@@ -20,6 +21,11 @@ namespace SpaceTraders
 
     namespace Endpoint::Contract
     {
+        std::vector<Model::Contract::Contract> ListContracts(HttpClient& client, const std::string& agentToken);
+        Model::Contract::Contract GetContract(HttpClient& client, const std::string& agentToken);
+        // void AcceptContract();
+        // void DeliverCargoToContract();
+        // void FulfillContract();
     }
 
     namespace Endpoint::Faction

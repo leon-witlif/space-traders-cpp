@@ -1,5 +1,3 @@
-#include "nlohmann/json.hpp"
-
 #include "Endpoint.h"
 
 static nlohmann::json content;
@@ -19,6 +17,22 @@ namespace SpaceTraders
             client.MakeGlobalRequest("/agents", content);
             return content.at("data").template get<std::vector<Model::Agent::Agent>>();
             // array{meta: array{total: int32, page: int32, limit: int32}}
+        }
+    }
+
+    namespace Endpoint::Contract
+    {
+        std::vector<Model::Contract::Contract> ListContracts(HttpClient& client, const std::string& agentToken)
+        {
+            client.MakeAccountRequest(agentToken, "/my/contracts", content);
+            return content.at("data").template get<std::vector<Model::Contract::Contract>>();
+            // array{meta: array{total: int32, page: int32, limit: int32}}
+        }
+
+        Model::Contract::Contract GetContract(HttpClient& client, const std::string& agentToken, const std::string& id)
+        {
+            client.MakeAccountRequest(agentToken, "/my/contracts/" + id, content);
+            return content.at("data").template get<Model::Contract::Contract>();
         }
     }
 

@@ -5,8 +5,8 @@ static ImGuiWindowFlags DefaultWindowFlags = ImGuiWindowFlags_NoResize
     | ImGuiWindowFlags_NoCollapse
     | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-SpaceTraders::Window::Window(const Model::Global::Status* status, const Model::Agent::Agent* agent, const std::vector<Model::Fleet::Ship>* ships)
-    : m_Status(status), m_Agent(agent), m_Ships(ships)
+SpaceTraders::Window::Window(const Model::Global::Status* status, const Model::Agent::Agent* agent, const std::vector<Model::Fleet::Ship>* ships, const std::vector<Model::Contract::Contract>* contracts)
+    : m_Status(status), m_Agent(agent), m_Ships(ships), m_Contracts(contracts)
 {
     if (!glfwInit())
     {
@@ -29,6 +29,10 @@ SpaceTraders::Window::Window(const Model::Global::Status* status, const Model::A
     glfwSwapInterval(1);
 
     ImGui::CreateContext();
+
+    // ImGuiIO& io = ImGui::GetIO();
+    // io.Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/ubuntu/UbuntuMono-R.ttf", 14);
+
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
@@ -129,6 +133,35 @@ void SpaceTraders::Window::ShowContractWindow()
     ImGui::SetNextWindowSize(ImVec2(640, 360), ImGuiCond_Always);
 
     ImGui::Begin("Contract", nullptr, DefaultWindowFlags);
+
+    if (m_Contracts && m_Contracts->size())
+    {
+        ImGui::BeginTabBar("Contracts");
+
+        for (const auto& contract: *m_Contracts)
+        {
+            if (ImGui::BeginTabItem(contract.type.c_str()))
+            {
+                ImGui::Text("FactionSymbol: %s", contract.factionSymbol.c_str());
+                ImGui::Text("Deadline: %s", contract.terms.deadline.c_str());
+                ImGui::Text("Payment: %i on accept, %i on fulfill", contract.terms.payment.onAccepted, contract.terms.payment.onFulfilled);
+
+                for (const auto& deliverGood : contract.terms.deliver)
+                {
+                    ImGui::BulletText("%i / %i %s at %s", deliverGood.unitsFulfilled, deliverGood.unitsRequired, deliverGood.tradeSymbol.c_str(), deliverGood.destinationSymbol.c_str());
+                }
+
+                ImGui::Text("Accepted: %s", contract.accepted ? "Yes" : "No");
+                ImGui::Text("Fulfilled: %s", contract.fulfilled ? "Yes" : "No");
+                ImGui::Text("DeadlineToAccept: %s", contract.deadlineToAccept.c_str());
+
+                ImGui::EndTabItem();
+            }
+        }
+
+        ImGui::EndTabBar();
+    }
+
     ImGui::End();
 }
 

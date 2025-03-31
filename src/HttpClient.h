@@ -4,10 +4,11 @@
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 
+#include <iostream>
 #include <string>
 
 #include "cpp-httplib/httplib.h"
-#include "nlohmann/json_fwd.hpp"
+#include "nlohmann/json.hpp"
 
 namespace SpaceTraders
 {

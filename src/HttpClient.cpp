@@ -1,5 +1,3 @@
-#include "nlohmann/json.hpp"
-
 #include "HttpClient.h"
 
 SpaceTraders::HttpClient::HttpClient(const std::string bearerToken)
