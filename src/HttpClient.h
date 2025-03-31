@@ -15,17 +15,22 @@ namespace SpaceTraders
     class HttpClient
     {
         public:
-            HttpClient(const std::string bearerToken);
+            HttpClient(const std::string& bearerToken);
 
-            void MakeGlobalRequest(const std::string& path, nlohmann::json& content);
-            void MakeAccountRequest(const std::string& agentToken, const std::string& path, nlohmann::json& content);
+            void GlobalGetRequest(const std::string& path, nlohmann::json& content);
+
+            void AccountGetRequest(const std::string& agentToken, const std::string& path, nlohmann::json& content);
+            void AccountPostRequest(const std::string& agentToken, const std::string& path);
+            void AccountPatchRequest(const std::string& agentToken, const std::string& path, const nlohmann::json& json);
 
         private:
-            void MakeRequest(const std::string& path, nlohmann::json& content);
+            void GetRequest(const std::string& path, nlohmann::json& content);
+            void PostRequest(const std::string& path);
+            void PatchRequest(const std::string& path, const nlohmann::json& json);
 
         private:
-            httplib::Client client;
-            const std::string bearerToken;
+            httplib::Client m_Client;
+            const std::string& m_BearerToken;
     };
 }
 

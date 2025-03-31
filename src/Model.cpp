@@ -59,6 +59,32 @@ namespace SpaceTraders
             json.at("role").get_to(registration.role);
         }
 
+        void from_json(const nlohmann::json& json, ShipNavRouteWaypoint& routeWaypoint)
+        {
+            json.at("symbol").get_to(routeWaypoint.symbol);
+            json.at("type").get_to(routeWaypoint.type);
+            json.at("systemSymbol").get_to(routeWaypoint.systemSymbol);
+            json.at("x").get_to(routeWaypoint.x);
+            json.at("y").get_to(routeWaypoint.y);
+        }
+
+        void from_json(const nlohmann::json& json, ShipNavRoute& route)
+        {
+            json.at("destination").get_to(route.destination);
+            json.at("origin").get_to(route.origin);
+            json.at("departureTime").get_to(route.departureTime);
+            json.at("arrival").get_to(route.arrival);
+        }
+
+        void from_json(const nlohmann::json& json, ShipNav& nav)
+        {
+            json.at("systemSymbol").get_to(nav.systemSymbol);
+            json.at("waypointSymbol").get_to(nav.waypointSymbol);
+            json.at("route").get_to(nav.route);
+            json.at("status").get_to(nav.status);
+            json.at("flightMode").get_to(nav.flightMode);
+        }
+
         void from_json(const nlohmann::json& json, ShipCrew& crew)
         {
             json.at("current").get_to(crew.current);
@@ -80,7 +106,7 @@ namespace SpaceTraders
         {
             json.at("symbol").get_to(ship.symbol);
             json.at("registration").get_to(ship.registration);
-            // nav
+            json.at("nav").get_to(ship.nav);
             json.at("crew").get_to(ship.crew);
             // frame
             // reactor
