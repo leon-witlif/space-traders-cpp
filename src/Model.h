@@ -77,6 +77,32 @@ namespace SpaceTraders
             std::string role;
         };
 
+        struct ShipNavRouteWaypoint
+        {
+            std::string symbol;
+            std::string type;
+            std::string systemSymbol;
+            int32_t x;
+            int32_t y;
+        };
+
+        struct ShipNavRoute
+        {
+            ShipNavRouteWaypoint destination;
+            ShipNavRouteWaypoint origin;
+            std::string departureTime;
+            std::string arrival;
+        };
+
+        struct ShipNav
+        {
+            std::string systemSymbol;
+            std::string waypointSymbol;
+            ShipNavRoute route;
+            std::string status;
+            std::string flightMode;
+        };
+
         struct ShipCrew
         {
             int32_t current;
@@ -98,7 +124,7 @@ namespace SpaceTraders
         {
             std::string symbol;
             ShipRegistration registration;
-            // nav
+            ShipNav nav;
             ShipCrew crew;
             // frame
             // reactor
@@ -111,6 +137,9 @@ namespace SpaceTraders
         };
 
         void from_json(const nlohmann::json& json, ShipRegistration& registration);
+        void from_json(const nlohmann::json& json, ShipNavRouteWaypoint& routeWaypoint);
+        void from_json(const nlohmann::json& json, ShipNavRoute& route);
+        void from_json(const nlohmann::json& json, ShipNav& nav);
         void from_json(const nlohmann::json& json, ShipCrew& crew);
         void from_json(const nlohmann::json& json, ShipFuel& fuel);
         void from_json(const nlohmann::json& json, Ship& ship);

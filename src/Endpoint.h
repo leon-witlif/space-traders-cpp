@@ -22,8 +22,8 @@ namespace SpaceTraders
     namespace Endpoint::Contract
     {
         std::vector<Model::Contract::Contract> ListContracts(HttpClient& client, const std::string& agentToken);
-        Model::Contract::Contract GetContract(HttpClient& client, const std::string& agentToken);
-        // void AcceptContract();
+        Model::Contract::Contract GetContract(HttpClient& client, const std::string& agentToken, const std::string& id);
+        void AcceptContract(HttpClient& client, const std::string& agentToken, const Model::Contract::Contract& contract);
         // void DeliverCargoToContract();
         // void FulfillContract();
     }
@@ -35,6 +35,7 @@ namespace SpaceTraders
     namespace Endpoint::Fleet
     {
         std::vector<Model::Fleet::Ship> ListShips(HttpClient& client, const std::string& agentToken);
+        void PatchShipNav(HttpClient& client, const std::string& agentToken, const Model::Fleet::Ship& ship, const std::string& flightMode);
     }
 
     namespace Endpoint::System
