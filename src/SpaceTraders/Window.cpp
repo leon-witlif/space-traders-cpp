@@ -103,10 +103,17 @@ void SpaceTraders::Window::ShowGlobalWindow()
 
     ImGui::Begin("Global", nullptr, DefaultWindowFlags);
 
-    ImGui::Text("Status: %s", status.status.c_str());
-    ImGui::Text("Version: %s", status.version.c_str());
-    ImGui::Text("ResetDate: %s", status.resetDate.c_str());
-    ImGui::TextWrapped("Description: %s", status.description.c_str());
+    if (status)
+    {
+        ImGui::Text("Status: %s", status->status.c_str());
+        ImGui::Text("Version: %s", status->version.c_str());
+        ImGui::Text("ResetDate: %s", status->resetDate.c_str());
+        ImGui::TextWrapped("Description: %s", status->description.c_str());
+    }
+    else
+    {
+        ImGui::Text("Unable to load Status...");
+    }
 
     ImGui::End();
 }
@@ -120,11 +127,18 @@ void SpaceTraders::Window::ShowAgentWindow()
 
     ImGui::Begin("Agent", nullptr, DefaultWindowFlags);
 
-    ImGui::Text("Symbol: %s", agent.symbol.c_str());
-    ImGui::Text("Headquarters: %s", agent.headquarters.c_str());
-    ImGui::Text("Credits: %li", agent.credits);
-    ImGui::Text("StartingFaction: %s", agent.startingFaction.c_str());
-    ImGui::Text("ShipCount: %i", agent.shipCount);
+    if (agent)
+    {
+        ImGui::Text("Symbol: %s", agent->symbol.c_str());
+        ImGui::Text("Headquarters: %s", agent->headquarters.c_str());
+        ImGui::Text("Credits: %li", agent->credits);
+        ImGui::Text("StartingFaction: %s", agent->startingFaction.c_str());
+        ImGui::Text("ShipCount: %i", agent->shipCount);
+    }
+    else
+    {
+        ImGui::Text("Unable to load Agent...");
+    }
 
     if (updateAgent)
     {
@@ -141,40 +155,49 @@ void SpaceTraders::Window::ShowContractWindow()
     ImGui::SetNextWindowSize(ImVec2(640, 360), ImGuiCond_Always);
 
     static auto contracts = Endpoint::Contract::ListContracts(m_Client, m_AgentToken);
-    static bool updateContracts = false;
 
     ImGui::Begin("Contract", nullptr, DefaultWindowFlags);
-    ImGui::BeginTabBar("Contracts");
 
-    for (const auto& contract : contracts)
+    if (contracts.size())
     {
-        if (ImGui::BeginTabItem(contract.type.c_str()))
+        ImGui::BeginTabBar("Contracts");
+
+        for (const auto& contract : contracts)
         {
-            ImGui::Text("FactionSymbol: %s", contract.factionSymbol.c_str());
-            ImGui::Text("Deadline: %s", contract.terms.deadline.c_str());
-            ImGui::Text("Payment: %i on accept, %i on fulfill", contract.terms.payment.onAccepted, contract.terms.payment.onFulfilled);
-
-            for (const auto& deliverGood : contract.terms.deliver)
+            if (ImGui::BeginTabItem(contract.type.c_str()))
             {
-                ImGui::BulletText("%i / %i %s at %s", deliverGood.unitsFulfilled, deliverGood.unitsRequired, deliverGood.tradeSymbol.c_str(), deliverGood.destinationSymbol.c_str());
-            }
+                ImGui::Text("FactionSymbol: %s", contract.factionSymbol.c_str());
+                ImGui::Text("Deadline: %s", contract.terms.deadline.c_str());
+                ImGui::Text("Payment: %i on accept, %i on fulfill", contract.terms.payment.onAccepted, contract.terms.payment.onFulfilled);
 
-            ImGui::Text("Accepted: %s", contract.accepted ? "Yes" : "No");
-            ImGui::Text("Fulfilled: %s", contract.fulfilled ? "Yes" : "No");
-
-            if (!contract.accepted)
-            {
-                ImGui::Text("DeadlineToAccept: %s", contract.deadlineToAccept.c_str());
-
-                if (ImGui::Button("Accept"))
+                for (const auto& deliverGood : contract.terms.deliver)
                 {
-                    Endpoint::Contract::AcceptContract(m_Client, m_AgentToken, contract);
-                    updateAgent = updateContracts = true;
+                    ImGui::BulletText("%i / %i %s at %s", deliverGood.unitsFulfilled, deliverGood.unitsRequired, deliverGood.tradeSymbol.c_str(), deliverGood.destinationSymbol.c_str());
                 }
-            }
 
-            ImGui::EndTabItem();
+                ImGui::Text("Accepted: %s", contract.accepted ? "Yes" : "No");
+                ImGui::Text("Fulfilled: %s", contract.fulfilled ? "Yes" : "No");
+
+                if (!contract.accepted)
+                {
+                    ImGui::Text("DeadlineToAccept: %s", contract.deadlineToAccept.c_str());
+
+                    if (ImGui::Button("Accept"))
+                    {
+                        Endpoint::Contract::AcceptContract(m_Client, m_AgentToken, contract);
+                        updateAgent = updateContracts = true;
+                    }
+                }
+
+                ImGui::EndTabItem();
+            }
         }
+
+        ImGui::EndTabBar();
+    }
+    else
+    {
+        ImGui::Text("Unable to load Contracts...");
     }
 
     if (updateContracts)
@@ -183,7 +206,6 @@ void SpaceTraders::Window::ShowContractWindow()
         contracts = Endpoint::Contract::ListContracts(m_Client, m_AgentToken);
     }
 
-    ImGui::EndTabBar();
     ImGui::End();
 }
 
@@ -195,48 +217,58 @@ void SpaceTraders::Window::ShowShipWindow()
     static auto ships = Endpoint::Fleet::ListShips(m_Client, m_AgentToken);
 
     ImGui::Begin("Ship", nullptr, DefaultWindowFlags);
-    ImGui::BeginTabBar("Ships");
 
-    for (const auto& ship : ships)
+    if (ships.size())
     {
-        if (ImGui::BeginTabItem(ship.symbol.c_str()))
+        ImGui::BeginTabBar("Ships");
+
+        for (const auto& ship : ships)
         {
-            ImGui::Text("Role: %s", ship.registration.role.c_str());
-            ImGui::Text("Waypoint: %s", ship.nav.waypointSymbol.c_str());
-            if (ship.nav.status == "IN_TRANSIT")
+            if (ImGui::BeginTabItem(ship.symbol.c_str()))
             {
-                ImGui::Text("Traveling from %s to %s", ship.nav.route.origin.symbol.c_str(), ship.nav.route.destination.symbol.c_str());
-                ImGui::Text("Arrival at %s", ship.nav.route.arrival.c_str());
-            }
-            ImGui::Text("Status: %s", ship.nav.status.c_str());
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("FlightMode:");
-            static const char* flightModes[] = {"DRIFT", "STEALTH", "CRUISE", "BURN"};
-
-            for (int32_t i = 0; i < 4; ++i)
-            {
-                ImGui::SameLine();
-
-                if (ship.nav.flightMode != flightModes[i])
+                ImGui::Text("Role: %s", ship.registration.role.c_str());
+                ImGui::Text("Waypoint: %s", ship.nav.waypointSymbol.c_str());
+                if (ship.nav.status == "IN_TRANSIT")
                 {
-                    if (ImGui::Button(flightModes[i]))
+                    ImGui::Text("Traveling from %s to %s", ship.nav.route.origin.symbol.c_str(), ship.nav.route.destination.symbol.c_str());
+                    ImGui::Text("Arrival at %s", ship.nav.route.arrival.c_str());
+                }
+                ImGui::Text("Status: %s", ship.nav.status.c_str());
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("FlightMode:");
+                static const char* flightModes[] = {"DRIFT", "STEALTH", "CRUISE", "BURN"};
+
+                for (int32_t i = 0; i < 4; ++i)
+                {
+                    ImGui::SameLine();
+
+                    if (ship.nav.flightMode != flightModes[i])
                     {
-                        Endpoint::Fleet::PatchShipNav(m_Client, m_AgentToken, ship, flightModes[i]);
-                        updateShips = true;
+                        if (ImGui::Button(flightModes[i]))
+                        {
+                            Endpoint::Fleet::PatchShipNav(m_Client, m_AgentToken, ship, flightModes[i]);
+                            updateShips = true;
+                        }
+                    }
+                    else
+                    {
+                        ImGui::Text("%s", ship.nav.flightMode.c_str());
                     }
                 }
-                else
-                {
-                    ImGui::Text("%s", ship.nav.flightMode.c_str());
-                }
+
+                ImGui::Text("Crew: %i / %i", ship.crew.current, ship.crew.capacity);
+                ImGui::Text("Fuel: %i / %i", ship.fuel.current, ship.fuel.capacity);
+
+                ImGui::EndTabItem();
             }
-
-            ImGui::Text("Crew: %i / %i", ship.crew.current, ship.crew.capacity);
-            ImGui::Text("Fuel: %i / %i", ship.fuel.current, ship.fuel.capacity);
-
-            ImGui::EndTabItem();
         }
+
+        ImGui::EndTabBar();
+    }
+    else
+    {
+        ImGui::Text("Unable to load Ships...");
     }
 
     if (updateShips)
@@ -245,6 +277,5 @@ void SpaceTraders::Window::ShowShipWindow()
         ships = Endpoint::Fleet::ListShips(m_Client, m_AgentToken);
     }
 
-    ImGui::EndTabBar();
     ImGui::End();
 }

@@ -1,15 +1,19 @@
 #include "Endpoint.h"
 
+#define TRY_RETURN(T) try { return content.template get<T>(); } catch (const nlohmann::json::exception& ex) { std::cerr << ex.what() << std::endl; }
+#define TRY_RETURN_DATA(T) try { return content.at("data").template get<T>(); } catch (const nlohmann::json::exception& ex) { std::cerr << ex.what() << std::endl; }
+
 static nlohmann::json content;
 
 namespace SpaceTraders
 {
     namespace Endpoint::Agent
     {
-        Model::Agent::Agent GetAgent(HttpClient& client, const std::string& agentToken)
+        std::optional<Model::Agent::Agent> GetAgent(HttpClient& client, const std::string& agentToken)
         {
             client.AccountGetRequest(agentToken, "/my/agent", content);
-            return content.at("data").template get<Model::Agent::Agent>();
+            TRY_RETURN_DATA(Model::Agent::Agent);
+            return std::nullopt;
         }
 
         std::vector<Model::Agent::Agent> ListAgents(HttpClient& client)
@@ -25,14 +29,16 @@ namespace SpaceTraders
         std::vector<Model::Contract::Contract> ListContracts(HttpClient& client, const std::string& agentToken)
         {
             client.AccountGetRequest(agentToken, "/my/contracts", content);
-            return content.at("data").template get<std::vector<Model::Contract::Contract>>();
+            TRY_RETURN_DATA(std::vector<Model::Contract::Contract>);
             // array{meta: array{total: int32, page: int32, limit: int32}}
+            return {};
         }
 
-        Model::Contract::Contract GetContract(HttpClient& client, const std::string& agentToken, const std::string& id)
+        std::optional<Model::Contract::Contract> GetContract(HttpClient& client, const std::string& agentToken, const std::string& id)
         {
             client.AccountGetRequest(agentToken, "/my/contracts/" + id, content);
-            return content.at("data").template get<Model::Contract::Contract>();
+            TRY_RETURN_DATA(Model::Contract::Contract);
+            return std::nullopt;
         }
 
         void AcceptContract(HttpClient& client, const std::string& agentToken, const Model::Contract::Contract& contract)
@@ -46,8 +52,9 @@ namespace SpaceTraders
         std::vector<Model::Fleet::Ship> ListShips(HttpClient& client, const std::string& agentToken)
         {
             client.AccountGetRequest(agentToken, "/my/ships", content);
-            return content.at("data").template get<std::vector<Model::Fleet::Ship>>();
+            TRY_RETURN_DATA(std::vector<Model::Fleet::Ship>);
             // array{meta: array{total: int32, page: int32, limit: int32}}
+            return {};
         }
 
         void PatchShipNav(HttpClient& client, const std::string& agentToken, const Model::Fleet::Ship& ship, const std::string& flightMode)
@@ -60,10 +67,11 @@ namespace SpaceTraders
 
     namespace Endpoint::Global
     {
-        Model::Global::Status GetStatus(HttpClient& client)
+        std::optional<Model::Global::Status> GetStatus(HttpClient& client)
         {
             client.GlobalGetRequest("/", content);
-            return content.template get<Model::Global::Status>();
+            TRY_RETURN(Model::Global::Status);
+            return std::nullopt;
         }
     }
 }
