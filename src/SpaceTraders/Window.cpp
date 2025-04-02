@@ -12,6 +12,11 @@ static ImGuiWindowFlags DefaultWindowFlags = ImGuiWindowFlags_NoResize
 SpaceTraders::Window::Window(HttpClient& client, const std::string& agentToken)
     : m_Client(client), m_AgentToken(agentToken)
 {
+    m_Status = std::make_unique<std::optional<Model::Global::Status>>(Endpoint::Global::GetStatus(m_Client));
+
+    m_ShouldUpdate = true;
+    m_UpdateThread = new std::thread([this]() { UpdateLoop(); });
+
     if (!glfwInit())
     {
         std::cerr << "Could not initialize GLFW" << std::endl;
@@ -45,6 +50,8 @@ SpaceTraders::Window::Window(HttpClient& client, const std::string& agentToken)
 
 SpaceTraders::Window::~Window()
 {
+    m_ShouldUpdate = false;
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
 
@@ -52,6 +59,43 @@ SpaceTraders::Window::~Window()
 
     glfwDestroyWindow(m_Window);
     glfwTerminate();
+
+    m_UpdateThread->join();
+    delete m_UpdateThread;
+}
+
+void SpaceTraders::Window::UpdateLoop()
+{
+    while (m_ShouldUpdate)
+    {
+        updateAgent = updateContracts = updateShips = true;
+        UpdateData();
+        // TODO: this currently locks up the console until the next run when closing the window
+        std::this_thread::sleep_for(std::chrono::seconds(15));
+    }
+}
+
+void SpaceTraders::Window::UpdateData()
+{
+    std::lock_guard<std::mutex> lock(m_DataMutex);
+
+    if (updateAgent)
+    {
+        updateAgent = false;
+        m_Agent = std::make_unique<std::optional<Model::Agent::Agent>>(Endpoint::Agent::GetAgent(m_Client, m_AgentToken));
+    }
+
+    if (updateContracts)
+    {
+        updateContracts = false;
+        m_Contracts = std::make_unique<std::vector<Model::Contract::Contract>>(Endpoint::Contract::ListContracts(m_Client, m_AgentToken));
+    }
+
+    if (updateShips)
+    {
+        updateShips = false;
+        m_Ships = std::make_unique<std::vector<Model::Fleet::Ship>>(Endpoint::Fleet::ListShips(m_Client, m_AgentToken));
+    }
 }
 
 void SpaceTraders::Window::RunWindowLoop()
@@ -99,16 +143,16 @@ void SpaceTraders::Window::ShowGlobalWindow()
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(640, 360), ImGuiCond_Always);
 
-    static auto status = Endpoint::Global::GetStatus(m_Client);
-
     ImGui::Begin("Global", nullptr, DefaultWindowFlags);
 
-    if (status)
+    if (m_Status && *m_Status)
     {
-        ImGui::Text("Status: %s", status->status.c_str());
-        ImGui::Text("Version: %s", status->version.c_str());
-        ImGui::Text("ResetDate: %s", status->resetDate.c_str());
-        ImGui::TextWrapped("Description: %s", status->description.c_str());
+        std::lock_guard<std::mutex> lock(m_DataMutex);
+
+        ImGui::Text("Status: %s", (*m_Status)->status.c_str());
+        ImGui::Text("Version: %s", (*m_Status)->version.c_str());
+        ImGui::Text("ResetDate: %s", (*m_Status)->resetDate.c_str());
+        ImGui::TextWrapped("Description: %s", (*m_Status)->description.c_str());
     }
     else
     {
@@ -123,27 +167,21 @@ void SpaceTraders::Window::ShowAgentWindow()
     ImGui::SetNextWindowPos(ImVec2(640, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(640, 360), ImGuiCond_Always);
 
-    static auto agent = Endpoint::Agent::GetAgent(m_Client, m_AgentToken);
-
     ImGui::Begin("Agent", nullptr, DefaultWindowFlags);
 
-    if (agent)
+    if (m_Agent && *m_Agent)
     {
-        ImGui::Text("Symbol: %s", agent->symbol.c_str());
-        ImGui::Text("Headquarters: %s", agent->headquarters.c_str());
-        ImGui::Text("Credits: %li", agent->credits);
-        ImGui::Text("StartingFaction: %s", agent->startingFaction.c_str());
-        ImGui::Text("ShipCount: %i", agent->shipCount);
+        std::lock_guard<std::mutex> lock(m_DataMutex);
+
+        ImGui::Text("Symbol: %s", (*m_Agent)->symbol.c_str());
+        ImGui::Text("Headquarters: %s", (*m_Agent)->headquarters.c_str());
+        ImGui::Text("Credits: %li", (*m_Agent)->credits);
+        ImGui::Text("StartingFaction: %s", (*m_Agent)->startingFaction.c_str());
+        ImGui::Text("ShipCount: %i", (*m_Agent)->shipCount);
     }
     else
     {
         ImGui::Text("Unable to load Agent...");
-    }
-
-    if (updateAgent)
-    {
-        updateAgent = false;
-        agent = Endpoint::Agent::GetAgent(m_Client, m_AgentToken);
     }
 
     ImGui::End();
@@ -154,15 +192,15 @@ void SpaceTraders::Window::ShowContractWindow()
     ImGui::SetNextWindowPos(ImVec2(0, 360), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(640, 360), ImGuiCond_Always);
 
-    static auto contracts = Endpoint::Contract::ListContracts(m_Client, m_AgentToken);
-
     ImGui::Begin("Contract", nullptr, DefaultWindowFlags);
 
-    if (contracts.size())
+    if (m_Contracts && (*m_Contracts).size())
     {
+        std::lock_guard<std::mutex> lock(m_DataMutex);
+
         ImGui::BeginTabBar("Contracts");
 
-        for (const auto& contract : contracts)
+        for (const auto& contract : *m_Contracts)
         {
             if (ImGui::BeginTabItem(contract.type.c_str()))
             {
@@ -202,8 +240,7 @@ void SpaceTraders::Window::ShowContractWindow()
 
     if (updateContracts)
     {
-        updateContracts = false;
-        contracts = Endpoint::Contract::ListContracts(m_Client, m_AgentToken);
+        UpdateData();
     }
 
     ImGui::End();
@@ -214,15 +251,15 @@ void SpaceTraders::Window::ShowShipWindow()
     ImGui::SetNextWindowPos(ImVec2(640, 360), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(640, 360), ImGuiCond_Always);
 
-    static auto ships = Endpoint::Fleet::ListShips(m_Client, m_AgentToken);
-
     ImGui::Begin("Ship", nullptr, DefaultWindowFlags);
 
-    if (ships.size())
+    if (m_Ships && (*m_Ships).size())
     {
+        std::lock_guard<std::mutex> lock(m_DataMutex);
+
         ImGui::BeginTabBar("Ships");
 
-        for (const auto& ship : ships)
+        for (const auto& ship : *m_Ships)
         {
             if (ImGui::BeginTabItem(ship.symbol.c_str()))
             {
@@ -273,8 +310,7 @@ void SpaceTraders::Window::ShowShipWindow()
 
     if (updateShips)
     {
-        updateShips = false;
-        ships = Endpoint::Fleet::ListShips(m_Client, m_AgentToken);
+        UpdateData();
     }
 
     ImGui::End();
