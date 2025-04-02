@@ -2,6 +2,7 @@
 #define ENDPOINT_H
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -14,7 +15,7 @@ namespace SpaceTraders
 {
     namespace Endpoint::Agent
     {
-        Model::Agent::Agent GetAgent(HttpClient& client, const std::string& agentToken);
+        std::optional<Model::Agent::Agent> GetAgent(HttpClient& client, const std::string& agentToken);
         std::vector<Model::Agent::Agent> ListAgents(HttpClient& client);
         // Model::Agent::Agent GetPublicAgent(HttpClient& client);
     }
@@ -22,7 +23,7 @@ namespace SpaceTraders
     namespace Endpoint::Contract
     {
         std::vector<Model::Contract::Contract> ListContracts(HttpClient& client, const std::string& agentToken);
-        Model::Contract::Contract GetContract(HttpClient& client, const std::string& agentToken, const std::string& id);
+        std::optional<Model::Contract::Contract> GetContract(HttpClient& client, const std::string& agentToken, const std::string& id);
         void AcceptContract(HttpClient& client, const std::string& agentToken, const Model::Contract::Contract& contract);
         // void DeliverCargoToContract();
         // void FulfillContract();
@@ -48,7 +49,7 @@ namespace SpaceTraders
 
     namespace Endpoint::Global
     {
-        Model::Global::Status GetStatus(HttpClient& client);
+        std::optional<Model::Global::Status> GetStatus(HttpClient& client);
     }
 }
 

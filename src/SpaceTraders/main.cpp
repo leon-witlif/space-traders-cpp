@@ -14,14 +14,12 @@ int main()
     if (!bearerToken.length())
     {
         std::cerr << "No account bearer token specified. Is the config variable set?" << std::endl;
-        std::exit(EXIT_FAILURE);
     }
 
     std::string agentToken = config.at("agentBearerToken").get<std::string>();
     if (!agentToken.length())
     {
         std::cerr << "No agent bearer token specified. Is the config value set?" << std::endl;
-        std::exit(EXIT_FAILURE);
     }
 
     SpaceTraders::HttpClient client(bearerToken);
