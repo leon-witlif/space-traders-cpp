@@ -1,6 +1,7 @@
 .vscode
 
 bin/
+lib/libShared.*
 obj/
 
 *.vcxproj
