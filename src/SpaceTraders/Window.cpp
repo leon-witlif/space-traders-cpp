@@ -1,5 +1,7 @@
 #include "Window.h"
 
+static std::chrono::time_point<std::chrono::system_clock> last, current;
+
 static bool updateAgent = false;
 static bool updateContracts = false;
 static bool updateShips = false;
@@ -68,10 +70,16 @@ void SpaceTraders::Window::UpdateLoop()
 {
     while (m_ShouldUpdate)
     {
-        updateAgent = updateContracts = updateShips = true;
-        UpdateData();
-        // TODO: this currently locks up the console until the next run when closing the window
-        std::this_thread::sleep_for(std::chrono::seconds(15));
+        current = std::chrono::high_resolution_clock::now();
+        auto diff = std::chrono::duration_cast<std::chrono::seconds>(current - last);
+
+        if (diff >= std::chrono::seconds(15))
+        {
+            last = current;
+
+            updateAgent = updateContracts = updateShips = true;
+            UpdateData();
+        }
     }
 }
 

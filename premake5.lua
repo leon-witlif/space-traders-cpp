@@ -49,10 +49,12 @@ project "Contract"
     cppdialect "C++17"
 
     files { "src/Contract/**.h", "src/Contract/**.cpp" }
-    includedirs { "src/Shared", "src/Contract", "vendor" }
+    includedirs { "src/Shared", "src/Contract", "vendor", "/usr/include", "/usr/local/include" }
 
     targetdir "bin/Contract/%{cfg.buildcfg}"
     objdir "obj/Contract/%{cfg.buildcfg}"
+
+    links { "Shared", "crypto", "ssl" }
 
     filter "configurations:Debug"
         defines { "DEBUG" }
