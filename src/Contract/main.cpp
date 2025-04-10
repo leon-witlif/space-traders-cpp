@@ -12,7 +12,7 @@
 
 volatile std::sig_atomic_t isRunning = 1;
 
-static std::chrono::time_point<std::chrono::system_clock> last, current;
+static std::chrono::time_point<std::chrono::steady_clock> last, current;
 
 void SignalHandler(int signal)
 {

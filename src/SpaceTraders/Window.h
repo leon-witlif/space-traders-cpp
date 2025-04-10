@@ -11,7 +11,6 @@
 #include <thread>
 #include <vector>
 
-#include "GL/gl.h"
 #include "GLFW/glfw3.h"
 
 #include "imgui/imgui.h"
