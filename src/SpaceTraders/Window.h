@@ -18,6 +18,7 @@
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+#include "Config.h"
 #include "HttpClient.h"
 #include "Endpoint.h"
 
@@ -26,7 +27,7 @@ namespace SpaceTraders
     class Window
     {
         public:
-            Window(HttpClient& client, const std::string& agentToken);
+            Window(HttpClient& client, Config& config);
             ~Window();
 
             void RunWindowLoop();
@@ -42,7 +43,7 @@ namespace SpaceTraders
 
         private:
             HttpClient& m_Client;
-            const std::string& m_AgentToken;
+            Config& m_Config;
 
             GLFWwindow* m_Window;
 

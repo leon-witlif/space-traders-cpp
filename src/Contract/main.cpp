@@ -37,7 +37,7 @@ int main()
         {
             last = current;
 
-            contracts = SpaceTraders::Endpoint::Contract::ListContracts(client, config.GetAgentToken());
+            contracts = SpaceTraders::Endpoint::Contract::ListContracts(client, config.GetAgentToken()).first;
             std::cout << contracts.size() << std::endl;
         }
     }

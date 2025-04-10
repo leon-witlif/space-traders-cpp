@@ -1,47 +1,45 @@
 #include "Endpoint.h"
 
-#define TRY_RETURN(T) try { return content.template get<T>(); } catch (const nlohmann::json::exception& ex) { std::cerr << ex.what() << std::endl; }
-#define TRY_RETURN_DATA(T) try { return content.at("data").template get<T>(); } catch (const nlohmann::json::exception& ex) { std::cerr << ex.what() << std::endl; }
-
-static nlohmann::json content;
+#define TRY_RETURN(T) try { return response.template get<T>(); } catch (const nlohmann::json::exception& ex) { std::cerr << ex.what() << std::endl; }
+#define TRY_RETURN_DATA(T) try { return response.at("data").template get<T>(); } catch (const nlohmann::json::exception& ex) { std::cerr << ex.what() << std::endl; }
+#define TRY_RETURN_DATA_META(T) try { return std::make_pair(response.at("data").template get<T>(), response.at("meta").template get<Model::Meta>()); } catch (const nlohmann::json::exception& ex) { std::cerr << ex.what() << std::endl; }
 
 namespace SpaceTraders
 {
     namespace Endpoint::Agent
     {
-        std::optional<Model::Agent::Agent> GetAgent(HttpClient& client, const std::string& agentToken)
+        std::optional<Model::Agent::Agent> GetAgent(AGENT_ACTION)
         {
-            client.AccountGetRequest(agentToken, "/my/agent", content);
+            auto response = client.AccountGetRequest(agentToken, "/my/agent");
             TRY_RETURN_DATA(Model::Agent::Agent);
             return std::nullopt;
         }
 
-        std::vector<Model::Agent::Agent> ListAgents(HttpClient& client)
+        std::pair<std::vector<Model::Agent::Agent>, Model::Meta> ListAgents(GLOBAL_ACTION)
         {
-            client.GlobalGetRequest("/agents", content);
-            return content.at("data").template get<std::vector<Model::Agent::Agent>>();
-            // array{meta: array{total: int32, page: int32, limit: int32}}
+            auto response = client.GlobalGetRequest("/agents");
+            TRY_RETURN_DATA_META(std::vector<Model::Agent::Agent>);
+            return {};
         }
     }
 
     namespace Endpoint::Contract
     {
-        std::vector<Model::Contract::Contract> ListContracts(HttpClient& client, const std::string& agentToken)
+        std::pair<std::vector<Model::Contract::Contract>, Model::Meta> ListContracts(AGENT_ACTION)
         {
-            client.AccountGetRequest(agentToken, "/my/contracts", content);
-            TRY_RETURN_DATA(std::vector<Model::Contract::Contract>);
-            // array{meta: array{total: int32, page: int32, limit: int32}}
+            auto response = client.AccountGetRequest(agentToken, "/my/contracts");
+            TRY_RETURN_DATA_META(std::vector<Model::Contract::Contract>);
             return {};
         }
 
-        std::optional<Model::Contract::Contract> GetContract(HttpClient& client, const std::string& agentToken, const std::string& id)
+        std::optional<Model::Contract::Contract> GetContract(AGENT_ACTION, const std::string& id)
         {
-            client.AccountGetRequest(agentToken, "/my/contracts/" + id, content);
+            auto response = client.AccountGetRequest(agentToken, "/my/contracts/" + id);
             TRY_RETURN_DATA(Model::Contract::Contract);
             return std::nullopt;
         }
 
-        void AcceptContract(HttpClient& client, const std::string& agentToken, const Model::Contract::Contract& contract)
+        void AcceptContract(AGENT_ACTION, const Model::Contract::Contract& contract)
         {
             client.AccountPostRequest(agentToken, "/my/contracts/" + contract.id + "/accept");
         }
@@ -49,27 +47,70 @@ namespace SpaceTraders
 
     namespace Endpoint::Fleet
     {
-        std::vector<Model::Fleet::Ship> ListShips(HttpClient& client, const std::string& agentToken)
+        std::pair<std::vector<Model::Fleet::Ship>, Model::Meta> ListShips(AGENT_ACTION)
         {
-            client.AccountGetRequest(agentToken, "/my/ships", content);
-            TRY_RETURN_DATA(std::vector<Model::Fleet::Ship>);
-            // array{meta: array{total: int32, page: int32, limit: int32}}
+            auto response = client.AccountGetRequest(agentToken, "/my/ships");
+            TRY_RETURN_DATA_META(std::vector<Model::Fleet::Ship>);
             return {};
         }
 
-        void PatchShipNav(HttpClient& client, const std::string& agentToken, const Model::Fleet::Ship& ship, const std::string& flightMode)
+        void OrbitShip(AGENT_ACTION, const Model::Fleet::Ship& ship)
         {
-            const nlohmann::json json = { {"flightMode", flightMode} };
+            auto response = client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/orbit");
+            std::cout << response.dump(4) << std::endl;
+        }
 
-            client.AccountPatchRequest(agentToken, "/my/ships/" + ship.symbol + "/nav", json);
+        void CreateChart(AGENT_ACTION, const Model::Fleet::Ship& ship)
+        {
+            auto response = client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/chart");
+            std::cout << response.dump(4) << std::endl;
+        }
+
+        void DockShip(AGENT_ACTION, const Model::Fleet::Ship& ship)
+        {
+            client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/dock");
+        }
+
+        void CreateSurvey(AGENT_ACTION, const Model::Fleet::Ship& ship)
+        {
+            auto response = client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/survey");
+            std::cout << response.dump(4) << std::endl;
+        }
+
+        void NavigateShip(AGENT_ACTION, const Model::Fleet::Ship& ship, const std::string& waypointSymbol)
+        {
+            const nlohmann::json body = { { "waypointSymbol", waypointSymbol } };
+            auto response = client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/navigate", &body);
+            std::cout << response.dump(4) << std::endl;
+        }
+
+        void PatchShipNav(AGENT_ACTION, const Model::Fleet::Ship& ship, const std::string& flightMode)
+        {
+            const nlohmann::json body = { { "flightMode", flightMode } };
+            client.AccountPatchRequest(agentToken, "/my/ships/" + ship.symbol + "/nav", &body);
+        }
+
+        void NegotiateContract(AGENT_ACTION, const Model::Fleet::Ship& ship)
+        {
+            client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/negotiate/contract");
+        }
+    }
+
+    namespace Endpoint::System
+    {
+        std::pair<std::vector<Model::System::Waypoint>, Model::Meta> ListWaypointsInSystem(AGENT_ACTION, const std::string& systemSymbol, int32_t page, int32_t limit)
+        {
+            auto response = client.AccountGetRequest(agentToken, "/systems/" + systemSymbol + "/waypoints?page=" + std::to_string(page) + "&limit=" + std::to_string(limit));
+            TRY_RETURN_DATA_META(std::vector<Model::System::Waypoint>);
+            return {};
         }
     }
 
     namespace Endpoint::Global
     {
-        std::optional<Model::Global::Status> GetStatus(HttpClient& client)
+        std::optional<Model::Global::Status> GetStatus(GLOBAL_ACTION)
         {
-            client.GlobalGetRequest("/", content);
+            auto response = client.GlobalGetRequest("/");
             TRY_RETURN(Model::Global::Status);
             return std::nullopt;
         }

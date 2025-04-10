@@ -11,8 +11,8 @@ static ImGuiWindowFlags DefaultWindowFlags = ImGuiWindowFlags_NoResize
     | ImGuiWindowFlags_NoCollapse
     | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-SpaceTraders::Window::Window(HttpClient& client, const std::string& agentToken)
-    : m_Client(client), m_AgentToken(agentToken)
+SpaceTraders::Window::Window(HttpClient& client, Config& config)
+    : m_Client(client), m_Config(config)
 {
     m_Status = std::make_unique<std::optional<Model::Global::Status>>(Endpoint::Global::GetStatus(m_Client));
 
@@ -90,19 +90,19 @@ void SpaceTraders::Window::UpdateData()
     if (updateAgent)
     {
         updateAgent = false;
-        m_Agent = std::make_unique<std::optional<Model::Agent::Agent>>(Endpoint::Agent::GetAgent(m_Client, m_AgentToken));
+        m_Agent = std::make_unique<std::optional<Model::Agent::Agent>>(Endpoint::Agent::GetAgent(m_Client, m_Config.GetAgentToken()));
     }
 
     if (updateContracts)
     {
         updateContracts = false;
-        m_Contracts = std::make_unique<std::vector<Model::Contract::Contract>>(Endpoint::Contract::ListContracts(m_Client, m_AgentToken));
+        m_Contracts = std::make_unique<std::vector<Model::Contract::Contract>>(Endpoint::Contract::ListContracts(m_Client, m_Config.GetAgentToken()).first);
     }
 
     if (updateShips)
     {
         updateShips = false;
-        m_Ships = std::make_unique<std::vector<Model::Fleet::Ship>>(Endpoint::Fleet::ListShips(m_Client, m_AgentToken));
+        m_Ships = std::make_unique<std::vector<Model::Fleet::Ship>>(Endpoint::Fleet::ListShips(m_Client, m_Config.GetAgentToken()).first);
     }
 }
 
@@ -230,7 +230,10 @@ void SpaceTraders::Window::ShowContractWindow()
 
                     if (ImGui::Button("Accept"))
                     {
-                        Endpoint::Contract::AcceptContract(m_Client, m_AgentToken, contract);
+                        Endpoint::Contract::AcceptContract(m_Client, m_Config.GetAgentToken(), contract);
+                        /*m_Config.GetConfig()["contracts"] = {
+                            { { "id", contract.id }, { "accepted", true } }
+                        };*/
                         updateAgent = updateContracts = true;
                     }
                 }
@@ -292,7 +295,7 @@ void SpaceTraders::Window::ShowShipWindow()
                     {
                         if (ImGui::Button(flightModes[i]))
                         {
-                            Endpoint::Fleet::PatchShipNav(m_Client, m_AgentToken, ship, flightModes[i]);
+                            Endpoint::Fleet::PatchShipNav(m_Client, m_Config.GetAgentToken(), ship, flightModes[i]);
                             updateShips = true;
                         }
                     }
@@ -303,7 +306,55 @@ void SpaceTraders::Window::ShowShipWindow()
                 }
 
                 ImGui::Text("Crew: %i / %i", ship.crew.current, ship.crew.capacity);
+
+                if (ship.cooldown.remainingSeconds)
+                {
+                    ImGui::Text("Cooldown: %i seconds", ship.cooldown.remainingSeconds);
+                }
+
+                ImGui::AlignTextToFramePadding();
                 ImGui::Text("Fuel: %i / %i", ship.fuel.current, ship.fuel.capacity);
+                ImGui::SameLine();
+                if (ImGui::Button("Refuel"))
+                {
+                    std::cout << "Refuel" << std::endl;
+                }
+
+                if (ImGui::Button("Negotiate Contract"))
+                {
+                    Endpoint::Fleet::NegotiateContract(m_Client, m_Config.GetAgentToken(), ship);
+                    updateShips = updateContracts = true;
+                }
+
+                ImGui::SameLine();
+                if (ImGui::Button("Create Chart"))
+                {
+                    Endpoint::Fleet::CreateChart(m_Client, m_Config.GetAgentToken(), ship);
+                    updateShips = true;
+                }
+
+                ImGui::SameLine();
+                if (ImGui::Button("Create Survey"))
+                {
+                    Endpoint::Fleet::OrbitShip(m_Client, m_Config.GetAgentToken(), ship);
+                    Endpoint::Fleet::CreateSurvey(m_Client, m_Config.GetAgentToken(), ship);
+                    Endpoint::Fleet::DockShip(m_Client, m_Config.GetAgentToken(), ship);
+                    updateShips = true;
+                }
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Navigate to:");
+                ImGui::SameLine();
+                static char destinationSymbol[16] = "";
+                ImGui::SetNextItemWidth(128.f);
+                ImGui::InputText("##destinationSymbol", destinationSymbol, sizeof(destinationSymbol), ImGuiInputTextFlags_CharsUppercase);
+                ImGui::SameLine();
+                if (ImGui::Button("Go!"))
+                {
+                    Endpoint::Fleet::OrbitShip(m_Client, m_Config.GetAgentToken(), ship);
+                    Endpoint::Fleet::NavigateShip(m_Client, m_Config.GetAgentToken(), ship, destinationSymbol);
+                    updateShips = true;
+                }
 
                 ImGui::EndTabItem();
             }

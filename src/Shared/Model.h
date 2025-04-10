@@ -9,6 +9,18 @@
 
 namespace SpaceTraders
 {
+    namespace Model
+    {
+        struct Meta
+        {
+            int32_t total;
+            int32_t page;
+            int32_t limit;
+        };
+
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Meta, total, page, limit);
+    }
+
     namespace Model::Agent
     {
         struct Agent
@@ -58,14 +70,33 @@ namespace SpaceTraders
             std::string deadlineToAccept;
         };
 
-        void from_json(const nlohmann::json& json, ContractPayment& payment);
-        void from_json(const nlohmann::json& json, ContractDeliverGood& deliverGood);
-        void from_json(const nlohmann::json& json, ContractTerms& terms);
-        void from_json(const nlohmann::json& json, Contract& contract);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ContractPayment, onAccepted, onFulfilled);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ContractDeliverGood, tradeSymbol, destinationSymbol, unitsRequired, unitsFulfilled);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ContractTerms, deadline, payment, deliver);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Contract, id, factionSymbol, type, terms, accepted, fulfilled, deadlineToAccept);
     }
 
     namespace Model::Faction
     {
+        struct FactionTrait
+        {
+            std::string symbol;
+            std::string name;
+            std::string description;
+        };
+
+        struct Faction
+        {
+            std::string symbol;
+            std::string name;
+            std::string description;
+            std::optional<std::string> headquarters;
+            std::vector<FactionTrait> traits;
+            bool isRecruiting;
+        };
+
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FactionTrait, symbol, name, description);
+        void from_json(const nlohmann::json& json, Faction& faction);
     }
 
     namespace Model::Fleet
@@ -113,6 +144,14 @@ namespace SpaceTraders
             int32_t wages;
         };
 
+        struct Cooldown
+        {
+            std::string shipSymbol;
+            int32_t totalSeconds;
+            int32_t remainingSeconds;
+            std::optional<std::string> expiration;
+        };
+
         struct ShipFuel
         {
             int32_t current;
@@ -129,24 +168,35 @@ namespace SpaceTraders
             // frame
             // reactor
             // engine
-            // cooldown
+            Cooldown cooldown;
             // modules
             // mounts
             // cargo
             ShipFuel fuel;
         };
 
-        void from_json(const nlohmann::json& json, ShipRegistration& registration);
-        void from_json(const nlohmann::json& json, ShipNavRouteWaypoint& routeWaypoint);
-        void from_json(const nlohmann::json& json, ShipNavRoute& route);
-        void from_json(const nlohmann::json& json, ShipNav& nav);
-        void from_json(const nlohmann::json& json, ShipCrew& crew);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ShipRegistration, name, factionSymbol, role);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ShipNavRouteWaypoint, symbol, type, systemSymbol, x, y);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ShipNavRoute, destination, origin, departureTime, arrival);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ShipNav, systemSymbol, waypointSymbol, route, status, flightMode);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ShipCrew, current, required, capacity, rotation, morale, wages);
+        void from_json(const nlohmann::json& json, Cooldown& cooldown);
         void from_json(const nlohmann::json& json, ShipFuel& fuel);
         void from_json(const nlohmann::json& json, Ship& ship);
     }
 
     namespace Model::System
     {
+        struct Waypoint
+        {
+            std::string symbol;
+            std::string type;
+            std::string systemSymbol;
+            int32_t x;
+            int32_t y;
+        };
+
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Waypoint, symbol, type, systemSymbol, x, y);
     }
 
     namespace Model::Data
@@ -163,7 +213,7 @@ namespace SpaceTraders
             std::string description;
         };
 
-        void from_json(const nlohmann::json& json, Status& status);
+        NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Status, status, version, resetDate, description);
     }
 }
 

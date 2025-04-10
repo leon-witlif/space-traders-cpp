@@ -1,13 +1,21 @@
 #include "Config.h"
 
 SpaceTraders::Config::Config(const std::string& configPath)
+    : m_ConfigFilePath(configPath)
 {
-    std::ifstream file(configPath);
-    m_Config = nlohmann::json::parse(file);
-    file.close();
+    std::ifstream configFile(m_ConfigFilePath);
+    m_Config = nlohmann::json::parse(configFile);
+    configFile.close();
 }
 
-const std::string& SpaceTraders::Config::GetBearerToken()
+SpaceTraders::Config::~Config()
+{
+    std::ofstream configFile(m_ConfigFilePath, std::ios::out | std::ios::trunc);
+    configFile << m_Config.dump(4) << std::endl;
+    configFile.close();
+}
+
+const std::string& SpaceTraders::Config::GetBearerToken() const
 {
     const std::string& token = m_Config.at("accountBearerToken").get_ref<const std::string&>();
 
@@ -19,7 +27,7 @@ const std::string& SpaceTraders::Config::GetBearerToken()
     return token;
 }
 
-const std::string& SpaceTraders::Config::GetAgentToken()
+const std::string& SpaceTraders::Config::GetAgentToken() const
 {
     const std::string& token = m_Config.at("agentBearerToken").get_ref<const std::string&>();
 
@@ -29,4 +37,9 @@ const std::string& SpaceTraders::Config::GetAgentToken()
     }
 
     return token;
+}
+
+nlohmann::json& SpaceTraders::Config::GetConfig()
+{
+    return m_Config;
 }

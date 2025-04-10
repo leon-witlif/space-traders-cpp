@@ -17,16 +17,16 @@ namespace SpaceTraders
         public:
             HttpClient(const std::string& bearerToken);
 
-            void GlobalGetRequest(const std::string& path, nlohmann::json& content);
+            nlohmann::json GlobalGetRequest(const std::string& path);
 
-            void AccountGetRequest(const std::string& agentToken, const std::string& path, nlohmann::json& content);
-            void AccountPostRequest(const std::string& agentToken, const std::string& path);
-            void AccountPatchRequest(const std::string& agentToken, const std::string& path, const nlohmann::json& json);
+            nlohmann::json AccountGetRequest(const std::string& agentToken, const std::string& path);
+            nlohmann::json AccountPostRequest(const std::string& agentToken, const std::string& path, const nlohmann::json* body = nullptr);
+            void AccountPatchRequest(const std::string& agentToken, const std::string& path, const nlohmann::json* body = nullptr);
 
         private:
-            void GetRequest(const std::string& path, nlohmann::json& content);
-            void PostRequest(const std::string& path);
-            void PatchRequest(const std::string& path, const nlohmann::json& json);
+            nlohmann::json GetRequest(const std::string& path);
+            nlohmann::json PostRequest(const std::string& path, const nlohmann::json* body = nullptr);
+            void PatchRequest(const std::string& path, const nlohmann::json* body = nullptr);
 
         private:
             httplib::Client m_Client;

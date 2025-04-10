@@ -14,11 +14,15 @@ namespace SpaceTraders
     {
         public:
             Config(const std::string& configPath);
+            ~Config();
 
-            const std::string& GetBearerToken();
-            const std::string& GetAgentToken();
+            const std::string& GetBearerToken() const;
+            const std::string& GetAgentToken() const;
+
+            nlohmann::json& GetConfig();
 
         private:
+            const std::string m_ConfigFilePath;
             nlohmann::json m_Config;
     };
 }
