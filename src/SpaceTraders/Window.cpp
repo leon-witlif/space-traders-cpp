@@ -1,6 +1,6 @@
 #include "Window.h"
 
-static std::chrono::time_point<std::chrono::system_clock> last, current;
+static std::chrono::time_point<std::chrono::steady_clock> last, current;
 
 static bool updateAgent = false;
 static bool updateContracts = false;
