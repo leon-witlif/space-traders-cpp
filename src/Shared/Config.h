@@ -17,7 +17,7 @@ namespace SpaceTraders
             ~Config();
 
             const std::string& GetBearerToken() const;
-            const std::string& GetAgentToken() const;
+            const nlohmann::json::array_t& GetAgents() const;
 
             nlohmann::json& GetConfig();
 

@@ -18,11 +18,6 @@ static ImGuiWindowFlags DefaultWindowFlags = ImGuiWindowFlags_NoResize
 SpaceTraders::Window::Window(HttpClient& client, Config& config)
     : m_Client(client), m_Config(config)
 {
-    m_Status = std::make_unique<std::optional<Model::Global::Status>>(Endpoint::Global::GetStatus(m_Client));
-
-    m_ShouldUpdate = true;
-    m_UpdateThread = new std::thread([this]() { UpdateLoop(); });
-
     if (!glfwInit())
     {
         std::cerr << "Could not initialize GLFW" << std::endl;
@@ -66,8 +61,60 @@ SpaceTraders::Window::~Window()
     glfwDestroyWindow(m_Window);
     glfwTerminate();
 
-    m_UpdateThread->join();
-    delete m_UpdateThread;
+    if (m_UpdateThread)
+    {
+        m_UpdateThread->join();
+        delete m_UpdateThread;
+    }
+
+    delete m_AgentToken;
+}
+
+void SpaceTraders::Window::RunWindowLoop()
+{
+    ImVec4 clearColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+    while (!glfwWindowShouldClose(m_Window))
+    {
+        glfwPollEvents();
+
+        if (glfwGetWindowAttrib(m_Window, GLFW_ICONIFIED) != 0)
+        {
+            ImGui_ImplGlfw_Sleep(10);
+            continue;
+        }
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        if (m_AgentToken)
+        {
+            ShowGlobalWindow();
+            ShowAgentWindow();
+            ShowContractWindow();
+            ShowShipWindow();
+        }
+        else
+        {
+            ShowAgentSelectionWindow();
+        }
+
+        ImGui::ShowDemoWindow();
+
+        ImGui::Render();
+
+        int width, height;
+        glfwGetFramebufferSize(m_Window, &width, &height);
+
+        glViewport(0, 0, width, height);
+        glClearColor(clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        glfwSwapBuffers(m_Window);
+    }
 }
 
 void SpaceTraders::Window::UpdateLoop()
@@ -94,60 +141,72 @@ void SpaceTraders::Window::UpdateData()
     if (updateAgent)
     {
         updateAgent = false;
-        m_Agent = std::make_unique<std::optional<Model::Agent::Agent>>(Endpoint::Agent::GetAgent(m_Client, m_Config.GetAgentToken()));
+        m_Agent = std::make_unique<std::optional<Model::Agent::Agent>>(Endpoint::Agent::GetAgent(m_Client, *m_AgentToken));
     }
 
     if (updateContracts)
     {
         updateContracts = false;
-        m_Contracts = std::make_unique<std::vector<Model::Contract::Contract>>(Endpoint::Contract::ListContracts(m_Client, m_Config.GetAgentToken()).first);
+        m_Contracts = std::make_unique<std::vector<Model::Contract::Contract>>(Endpoint::Contract::ListContracts(m_Client, *m_AgentToken).first);
     }
 
     if (updateShips)
     {
         updateShips = false;
-        m_Ships = std::make_unique<std::vector<Model::Fleet::Ship>>(Endpoint::Fleet::ListShips(m_Client, m_Config.GetAgentToken()).first);
+        m_Ships = std::make_unique<std::vector<Model::Fleet::Ship>>(Endpoint::Fleet::ListShips(m_Client, *m_AgentToken).first);
     }
 }
 
-void SpaceTraders::Window::RunWindowLoop()
+void SpaceTraders::Window::ShowAgentSelectionWindow()
 {
-    ImVec4 clearColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(1280, 720), ImGuiCond_Always);
 
-    while (!glfwWindowShouldClose(m_Window))
+    ImGui::Begin("Agent Selection", nullptr, DefaultWindowFlags);
+
+    static const nlohmann::json::array_t& agents = m_Config.GetAgents();
+
+    static int32_t currentAgentIndex = 0;
+    const nlohmann::json::object_t& currentAgent = agents[currentAgentIndex];
+
+    static ImVec2 windowSize = ImGui::GetWindowSize();
+    static int32_t numItems = 2;
+
+    float_t itemWidth = 200.0f;
+    float_t itemHeight = ImGui::GetTextLineHeightWithSpacing() * numItems;
+
+    float_t posX = (windowSize.x - itemWidth) * 0.5f;
+    float_t posY = (windowSize.y - itemHeight) * 0.5f;
+
+    ImGui::SetCursorPos(ImVec2(posX, posY));
+    ImGui::BeginGroup();
+
+    ImGui::SetNextItemWidth(itemWidth);
+    if (ImGui::BeginCombo("##agentSelection", currentAgent.at("name").get<std::string>().c_str()))
     {
-        glfwPollEvents();
-
-        if (glfwGetWindowAttrib(m_Window, GLFW_ICONIFIED) != 0)
+        for (int32_t i = 0; i < agents.size(); ++i)
         {
-            ImGui_ImplGlfw_Sleep(10);
-            continue;
+            if (ImGui::Selectable(agents[i]["name"].get<std::string>().c_str()))
+            {
+                currentAgentIndex = i;
+            }
         }
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ShowGlobalWindow();
-        ShowAgentWindow();
-        ShowContractWindow();
-        ShowShipWindow();
-
-        ImGui::ShowDemoWindow();
-
-        ImGui::Render();
-
-        int width, height;
-        glfwGetFramebufferSize(m_Window, &width, &height);
-
-        glViewport(0, 0, width, height);
-        glClearColor(clearColor.x * clearColor.w, clearColor.y * clearColor.w, clearColor.z * clearColor.w, clearColor.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glfwSwapBuffers(m_Window);
+        ImGui::EndCombo();
     }
+
+    if (ImGui::Button("Select"))
+    {
+        m_AgentToken = new std::string(currentAgent.at("token").get<const std::string>());
+        m_Status = std::make_unique<std::optional<Model::Global::Status>>(Endpoint::Global::GetStatus(m_Client));
+
+        m_ShouldUpdate = true;
+        m_UpdateThread = new std::thread([this]() { UpdateLoop(); });
+    }
+
+    ImGui::EndGroup();
+
+    ImGui::End();
 }
 
 void SpaceTraders::Window::ShowGlobalWindow()
@@ -234,7 +293,7 @@ void SpaceTraders::Window::ShowContractWindow()
 
                     if (ImGui::Button("Accept"))
                     {
-                        Endpoint::Contract::AcceptContract(m_Client, m_Config.GetAgentToken(), contract);
+                        Endpoint::Contract::AcceptContract(m_Client, *m_AgentToken, contract);
                         /*m_Config.GetConfig()["contracts"] = {
                             { { "id", contract.id }, { "accepted", true } }
                         };*/
@@ -300,11 +359,11 @@ void SpaceTraders::Window::ShowShipWindow()
                         {
                             if (ship.nav.status == "DOCKED")
                             {
-                                Endpoint::Fleet::OrbitShip(m_Client, m_Config.GetAgentToken(), ship);
+                                Endpoint::Fleet::OrbitShip(m_Client, *m_AgentToken, ship);
                             }
                             else
                             {
-                                Endpoint::Fleet::DockShip(m_Client, m_Config.GetAgentToken(), ship);
+                                Endpoint::Fleet::DockShip(m_Client, *m_AgentToken, ship);
                             }
                             updateShips = true;
                         }
@@ -327,7 +386,7 @@ void SpaceTraders::Window::ShowShipWindow()
                     {
                         if (ImGui::Button(flightModes[i]))
                         {
-                            Endpoint::Fleet::PatchShipNav(m_Client, m_Config.GetAgentToken(), ship, flightModes[i]);
+                            Endpoint::Fleet::PatchShipNav(m_Client, *m_AgentToken, ship, flightModes[i]);
                             updateShips = true;
                         }
                     }
@@ -349,30 +408,30 @@ void SpaceTraders::Window::ShowShipWindow()
                 ImGui::SameLine();
                 if (ImGui::Button("Refuel"))
                 {
-                    Endpoint::Fleet::DockShip(m_Client, m_Config.GetAgentToken(), ship);
-                    Endpoint::Fleet::RefuelShip(m_Client, m_Config.GetAgentToken(), ship);
+                    Endpoint::Fleet::DockShip(m_Client, *m_AgentToken, ship);
+                    Endpoint::Fleet::RefuelShip(m_Client, *m_AgentToken, ship);
                     updateShips = updateAgent = true;
                 }
 
                 if (ImGui::Button("Negotiate Contract"))
                 {
-                    Endpoint::Fleet::DockShip(m_Client, m_Config.GetAgentToken(), ship);
-                    Endpoint::Fleet::NegotiateContract(m_Client, m_Config.GetAgentToken(), ship);
+                    Endpoint::Fleet::DockShip(m_Client, *m_AgentToken, ship);
+                    Endpoint::Fleet::NegotiateContract(m_Client, *m_AgentToken, ship);
                     updateShips = updateContracts = true;
                 }
 
                 ImGui::SameLine();
                 if (ImGui::Button("Create Chart"))
                 {
-                    Endpoint::Fleet::CreateChart(m_Client, m_Config.GetAgentToken(), ship);
+                    Endpoint::Fleet::CreateChart(m_Client, *m_AgentToken, ship);
                     updateShips = true;
                 }
 
                 ImGui::SameLine();
                 if (ImGui::Button("Create Survey"))
                 {
-                    Endpoint::Fleet::OrbitShip(m_Client, m_Config.GetAgentToken(), ship);
-                    Endpoint::Fleet::CreateSurvey(m_Client, m_Config.GetAgentToken(), ship);
+                    Endpoint::Fleet::OrbitShip(m_Client, *m_AgentToken, ship);
+                    Endpoint::Fleet::CreateSurvey(m_Client, *m_AgentToken, ship);
                     updateShips = true;
                 }
 
@@ -387,8 +446,8 @@ void SpaceTraders::Window::ShowShipWindow()
                 ImGui::SameLine();
                 if (ImGui::Button("Go!"))
                 {
-                    Endpoint::Fleet::OrbitShip(m_Client, m_Config.GetAgentToken(), ship);
-                    Endpoint::Fleet::NavigateShip(m_Client, m_Config.GetAgentToken(), ship, destinationSymbol);
+                    Endpoint::Fleet::OrbitShip(m_Client, *m_AgentToken, ship);
+                    Endpoint::Fleet::NavigateShip(m_Client, *m_AgentToken, ship, destinationSymbol);
                     updateShips = true;
                 }
 
