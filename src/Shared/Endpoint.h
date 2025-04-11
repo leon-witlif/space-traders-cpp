@@ -46,6 +46,7 @@ namespace SpaceTraders
         void CreateSurvey(AGENT_ACTION, const Model::Fleet::Ship& ship);
         void NavigateShip(AGENT_ACTION, const Model::Fleet::Ship& ship, const std::string& waypointSymbol);
         void PatchShipNav(AGENT_ACTION, const Model::Fleet::Ship& ship, const std::string& flightMode);
+        void RefuelShip(AGENT_ACTION, const Model::Fleet::Ship& ship);
         void NegotiateContract(AGENT_ACTION, const Model::Fleet::Ship& ship);
     }
 

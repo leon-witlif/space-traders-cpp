@@ -12,7 +12,11 @@
 
 volatile std::sig_atomic_t isRunning = 1;
 
-static std::chrono::time_point<std::chrono::steady_clock> last, current;
+#ifdef _WIN32
+  static std::chrono::time_point<std::chrono::steady_clock> last, current;
+#else
+  static std::chrono::time_point<std::chrono::system_clock> last, current;
+#endif
 
 void SignalHandler(int signal)
 {

@@ -1,6 +1,10 @@
 #include "Window.h"
 
-static std::chrono::time_point<std::chrono::steady_clock> last, current;
+#ifdef _WIN32
+  static std::chrono::time_point<std::chrono::steady_clock> last, current;
+#else
+  static std::chrono::time_point<std::chrono::system_clock> last, current;
+#endif
 
 static bool updateAgent = false;
 static bool updateContracts = false;
@@ -281,12 +285,40 @@ void SpaceTraders::Window::ShowShipWindow()
                     ImGui::Text("Traveling from %s to %s", ship.nav.route.origin.symbol.c_str(), ship.nav.route.destination.symbol.c_str());
                     ImGui::Text("Arrival at %s", ship.nav.route.arrival.c_str());
                 }
-                ImGui::Text("Status: %s", ship.nav.status.c_str());
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Status:");
+
+                static const char* status[] = {"DOCKED", "IN_ORBIT"};
+                for (int32_t i = 0; i < 2; ++i)
+                {
+                    ImGui::SameLine();
+
+                    if (ship.nav.status != status[i])
+                    {
+                        if (ImGui::Button(status[i] == "DOCKED" ? "DOCK" : "ORBIT"))
+                        {
+                            if (ship.nav.status == "DOCKED")
+                            {
+                                Endpoint::Fleet::OrbitShip(m_Client, m_Config.GetAgentToken(), ship);
+                            }
+                            else
+                            {
+                                Endpoint::Fleet::DockShip(m_Client, m_Config.GetAgentToken(), ship);
+                            }
+                            updateShips = true;
+                        }
+                    }
+                    else
+                    {
+                        ImGui::Text("%s", ship.nav.status.c_str());
+                    }
+                }
 
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text("FlightMode:");
-                static const char* flightModes[] = {"DRIFT", "STEALTH", "CRUISE", "BURN"};
 
+                static const char* flightModes[] = {"DRIFT", "STEALTH", "CRUISE", "BURN"};
                 for (int32_t i = 0; i < 4; ++i)
                 {
                     ImGui::SameLine();
@@ -317,11 +349,14 @@ void SpaceTraders::Window::ShowShipWindow()
                 ImGui::SameLine();
                 if (ImGui::Button("Refuel"))
                 {
-                    std::cout << "Refuel" << std::endl;
+                    Endpoint::Fleet::DockShip(m_Client, m_Config.GetAgentToken(), ship);
+                    Endpoint::Fleet::RefuelShip(m_Client, m_Config.GetAgentToken(), ship);
+                    updateShips = updateAgent = true;
                 }
 
                 if (ImGui::Button("Negotiate Contract"))
                 {
+                    Endpoint::Fleet::DockShip(m_Client, m_Config.GetAgentToken(), ship);
                     Endpoint::Fleet::NegotiateContract(m_Client, m_Config.GetAgentToken(), ship);
                     updateShips = updateContracts = true;
                 }
@@ -338,16 +373,17 @@ void SpaceTraders::Window::ShowShipWindow()
                 {
                     Endpoint::Fleet::OrbitShip(m_Client, m_Config.GetAgentToken(), ship);
                     Endpoint::Fleet::CreateSurvey(m_Client, m_Config.GetAgentToken(), ship);
-                    Endpoint::Fleet::DockShip(m_Client, m_Config.GetAgentToken(), ship);
                     updateShips = true;
                 }
 
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text("Navigate to:");
+
                 ImGui::SameLine();
                 static char destinationSymbol[16] = "";
                 ImGui::SetNextItemWidth(128.f);
                 ImGui::InputText("##destinationSymbol", destinationSymbol, sizeof(destinationSymbol), ImGuiInputTextFlags_CharsUppercase);
+
                 ImGui::SameLine();
                 if (ImGui::Button("Go!"))
                 {
