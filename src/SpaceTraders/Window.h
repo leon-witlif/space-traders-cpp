@@ -35,6 +35,8 @@ namespace SpaceTraders
             void UpdateLoop();
             void UpdateData();
 
+            void ShowAgentSelectionWindow();
+
             void ShowGlobalWindow();
             void ShowAgentWindow();
             void ShowContractWindow();
@@ -44,10 +46,10 @@ namespace SpaceTraders
             HttpClient& m_Client;
             Config& m_Config;
 
-            GLFWwindow* m_Window;
-
-            std::thread* m_UpdateThread;
-            std::atomic<bool> m_ShouldUpdate;
+            GLFWwindow* m_Window = nullptr;
+            const std::string* m_AgentToken = nullptr;
+            std::thread* m_UpdateThread = nullptr;
+            std::atomic<bool> m_ShouldUpdate = false;
             std::mutex m_DataMutex;
 
             std::unique_ptr<std::optional<Model::Global::Status>> m_Status;

@@ -27,6 +27,7 @@ int main()
 {
     std::signal(SIGINT, SignalHandler);
 
+#if 0
     SpaceTraders::Config config("config.json");
     SpaceTraders::HttpClient client(config.GetBearerToken());
 
@@ -45,4 +46,5 @@ int main()
             std::cout << contracts.size() << std::endl;
         }
     }
+#endif
 }

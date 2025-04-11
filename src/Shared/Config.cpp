@@ -32,12 +32,12 @@ SpaceTraders::Config::~Config()
 
 const std::string& SpaceTraders::Config::GetBearerToken() const
 {
-    if (!m_Config.contains("accountBearerToken"))
+    if (!m_Config.contains("accountToken"))
     {
-        PRINT_ERROR_EXIT("No account bearer token specified. Is the config variable set?");
+        PRINT_ERROR_EXIT("No account token specified. Is the config variable set?");
     }
 
-    const std::string& token = m_Config.at("accountBearerToken").get_ref<const std::string&>();
+    const std::string& token = m_Config.at("accountToken").get_ref<const std::string&>();
 
     if (!token.length())
     {
@@ -47,21 +47,9 @@ const std::string& SpaceTraders::Config::GetBearerToken() const
     return token;
 }
 
-const std::string& SpaceTraders::Config::GetAgentToken() const
+const nlohmann::json::array_t& SpaceTraders::Config::GetAgents() const
 {
-    if (!m_Config.contains("agentBearerToken"))
-    {
-        PRINT_ERROR_EXIT("No agent bearer token specified. Is the config value set?");
-    }
-
-    const std::string& token = m_Config.at("agentBearerToken").get_ref<const std::string&>();
-
-    if (!token.length())
-    {
-        std::cerr << "Agent bearer token is empty" << std::endl;
-    }
-
-    return token;
+    return m_Config.at("agents").get_ref<const nlohmann::json::array_t&>();
 }
 
 nlohmann::json& SpaceTraders::Config::GetConfig()
