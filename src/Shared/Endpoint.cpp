@@ -56,8 +56,7 @@ namespace SpaceTraders
 
         void OrbitShip(AGENT_ACTION, const Model::Fleet::Ship& ship)
         {
-            auto response = client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/orbit");
-            std::cout << response.dump(4) << std::endl;
+            client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/orbit");
         }
 
         void CreateChart(AGENT_ACTION, const Model::Fleet::Ship& ship)
@@ -88,6 +87,11 @@ namespace SpaceTraders
         {
             const nlohmann::json body = { { "flightMode", flightMode } };
             client.AccountPatchRequest(agentToken, "/my/ships/" + ship.symbol + "/nav", &body);
+        }
+
+        void RefuelShip(AGENT_ACTION, const Model::Fleet::Ship& ship)
+        {
+            client.AccountPostRequest(agentToken, "/my/ships/" + ship.symbol + "/refuel");
         }
 
         void NegotiateContract(AGENT_ACTION, const Model::Fleet::Ship& ship)
