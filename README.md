@@ -37,11 +37,10 @@ Information on how to obtain the tokens can be found here: https://spacetraders.
 1. `vendor/bin/premake5 gmake`
 2. `make`
 
-### Windows (WIP)
+### Windows
 
 1. Set up the following environment variables
    1. `OPENSSL_ROOT`
-   2. `OPENGL_ROOT`
 2. `vendor\bin\premake5 vs2022`
 3. Build the project
 
